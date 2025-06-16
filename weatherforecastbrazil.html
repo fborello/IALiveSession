@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Teste IA - Previsão do Tempo Brasil</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .controls {
+            padding: 30px 40px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .filter-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 12px 24px;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-btn:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .weather-table {
+            padding: 40px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        td {
+            padding: 18px 20px;
+            border-bottom: 1px solid #f1f2f6;
+            transition: background-color 0.3s ease;
+        }
+
+        tr:hover td {
+            background-color: #f8f9fa;
+        }
+
+        .city-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .temperature {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #e74c3c;
+        }
+
+        .weather-icon {
+            font-size: 1.5rem;
+            margin-right: 8px;
+        }
+
+        .weather-condition {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .humidity {
+            color: #3498db;
+            font-weight: 500;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-buttons {
+                justify-content: center;
+            }
+            
+            table {
+                font-size: 0.9rem;
+            }
+            
+            th, td {
+                padding: 12px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SITE TESTE IA</h1>
+            <p>Tabela com a previsão do tempo para o Brasil nas principais cidades, customizando por chuva, sol, neve</p>
+        </div>
+
+        <div class="controls">
+            <div class="filter-section">
+                <span class="filter-label">Filtrar por condição:</span>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">
+                        🌍 Todas
+                    </button>
+                    <button class="filter-btn" data-filter="sol">
+                        ☀️ Sol
+                    </button>
+                    <button class="filter-btn" data-filter="chuva">
+                        🌧️ Chuva
+                    </button>
+                    <button class="filter-btn" data-filter="neve">
+                        ❄️ Neve
+                    </button>
+                    <button class="filter-btn" data-filter="nublado">
+                        ☁️ Nublado
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="weather-table">
+            <table id="weatherTable">
+                <thead>
+                    <tr>
+                        <th>Cidade</th>
+                        <th>Condição</th>
+                        <th>Temperatura</th>
+                        <th>Umidade</th>
+                        <th>Vento</th>
+                    </tr>
+                </thead>
+                <tbody id="weatherTableBody">
+                    <!-- Dados serão inseridos via JavaScript -->
+                </tbody>
+            </table>
+            <div id="noResults" class="no-results hidden">
+                Nenhuma cidade encontrada com as condições selecionadas.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração das cidades
+        const CITIES = [
+            { name: "São Paulo", lat: -23.5505, lon: -46.6333 },
+            { name: "Rio de Janeiro", lat: -22.9068, lon: -43.1729 },
+            { name: "Brasília", lat: -15.7975, lon: -47.8919 },
+            { name: "Salvador", lat: -12.9714, lon: -38.5014 },
+            { name: "Fortaleza", lat: -3.7319, lon: -38.5267 },
+            { name: "Belo Horizonte", lat: -19.9167, lon: -43.9345 },
+            { name: "Manaus", lat: -3.1190, lon: -60.0217 },
+            { name: "Curitiba", lat: -25.4284, lon: -49.2733 },
+            { name: "Recife", lat: -8.0476, lon: -34.8770 },
+            { name: "Porto Alegre", lat: -30.0346, lon: -51.2177 },
+            { name: "Goiânia", lat: -16.6869, lon: -49.2648 },
+            { name: "Belém", lat: -1.4557, lon: -48.4902 }
+        ];
+
+        let weatherData = [];
+        let currentFilter = 'all';
+
+        // Função para converter código de condição do Open-Meteo para nosso formato
+        function getWeatherCondition(code) {
+            // Códigos do Open-Meteo: https://open-meteo.com/en/docs
+            if (code >= 0 && code <= 3) return 'sol';      // Céu limpo a parcialmente nublado
+            if (code >= 45 && code <= 48) return 'nublado'; // Neblina
+            if (code >= 51 && code <= 55) return 'chuva';   // Chuvisco
+            if (code >= 56 && code <= 57) return 'neve';    // Chuvisco congelante
+            if (code >= 61 && code <= 65) return 'chuva';   // Chuva
+            if (code >= 66 && code <= 67) return 'chuva';   // Chuva forte
+            if (code >= 71 && code <= 77) return 'neve';    // Neve
+            if (code >= 80 && code <= 82) return 'chuva';   // Chuva com trovões
+            if (code >= 85 && code <= 86) return 'neve';    // Neve com trovões
+            if (code >= 95 && code <= 99) return 'chuva';   // Tempestade
+            return 'nublado';
+        }
+
+        // Função para obter o ícone correspondente à condição
+        function getWeatherIcon(condition) {
+            const icons = {
+                'sol': '☀️',
+                'chuva': '🌧️',
+                'neve': '❄️',
+                'nublado': '☁️'
+            };
+            return icons[condition] || '☁️';
+        }
+
+        // Função para buscar dados do clima
+        async function fetchWeatherData() {
+            try {
+                const promises = CITIES.map(async (city) => {
+                    const response = await fetch(
+                        `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=America/Sao_Paulo`
+                    );
+                    const data = await response.json();
+                    
+                    return {
+                        city: city.name,
+                        condition: getWeatherCondition(data.current.weather_code),
+                        icon: getWeatherIcon(getWeatherCondition(data.current.weather_code)),
+                        temperature: `${Math.round(data.current.temperature_2m)}°C`,
+                        humidity: `${Math.round(data.current.relative_humidity_2m)}%`,
+                        wind: `${Math.round(data.current.wind_speed_10m * 3.6)} km/h` // Convertendo m/s para km/h
+                    };
+                });
+
+                weatherData = await Promise.all(promises);
+                const filteredData = filterData(currentFilter);
+                renderTable(filteredData);
+            } catch (error) {
+                console.error('Erro ao buscar dados do clima:', error);
+            }
+        }
+
+        // Função para renderizar a tabela
+        function renderTable(data) {
+            const tableBody = document.getElementById('weatherTableBody');
+            const noResults = document.getElementById('noResults');
+            
+            if (data.length === 0) {
+                tableBody.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+            
+            noResults.classList.add('hidden');
+            
+            tableBody.innerHTML = data.map(city => `
+                <tr data-condition="${city.condition}">
+                    <td class="city-name">${city.city}</td>
+                    <td class="weather-condition">
+                        <span class="weather-icon">${city.icon}</span>
+                        ${city.condition.charAt(0).toUpperCase() + city.condition.slice(1)}
+                    </td>
+                    <td class="temperature">${city.temperature}</td>
+                    <td class="humidity">${city.humidity}</td>
+                    <td>${city.wind}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Função para filtrar dados
+        function filterData(condition) {
+            if (condition === 'all') {
+                return weatherData;
+            }
+            return weatherData.filter(city => city.condition === condition);
+        }
+
+        // Event listeners para os botões de filtro
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                const filteredData = filterData(currentFilter);
+                renderTable(filteredData);
+            });
+        });
+
+        // Inicializa buscando os dados
+        fetchWeatherData();
+
+        // Atualiza os dados a cada 5 minutos
+        setInterval(fetchWeatherData, 300000);
+    </script>
+</body>
+</html>
