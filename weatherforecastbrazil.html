@@ -115,6 +115,7 @@
             padding: 1.5rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            animation: fadeIn 0.5s ease-out;
         }
 
         .weather-card:hover {
@@ -197,6 +198,45 @@
             margin-top: 1rem;
         }
 
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+        }
+
+        .loading-indicator.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #e2e8f0;
+            border-top-color: #0f172a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (max-width: 768px) {
             .dashboard {
                 padding: 1rem;
@@ -230,7 +270,13 @@
                 <h1>Weather Dashboard</h1>
                 <p>Previsão do tempo em tempo real para as principais cidades do Brasil</p>
             </div>
-            <div class="last-update" id="lastUpdate"></div>
+            <div>
+                <div class="last-update" id="lastUpdate"></div>
+                <div class="loading-indicator" id="loadingIndicator">
+                    <div class="loading-spinner"></div>
+                    <span>Atualizando dados...</span>
+                </div>
+            </div>
         </div>
 
         <div class="controls">
@@ -310,7 +356,9 @@
 
         // Função para buscar dados do clima
         async function fetchWeatherData() {
+            const loadingIndicator = document.getElementById('loadingIndicator');
             try {
+                loadingIndicator.classList.add('active');
                 const promises = CITIES.map(async (city) => {
                     const response = await fetch(
                         `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=America/Sao_Paulo`
@@ -323,7 +371,7 @@
                         icon: getWeatherIcon(getWeatherCondition(data.current.weather_code)),
                         temperature: `${Math.round(data.current.temperature_2m)}°C`,
                         humidity: `${Math.round(data.current.relative_humidity_2m)}%`,
-                        wind: `${Math.round(data.current.wind_speed_10m * 3.6)} km/h` // Convertendo m/s para km/h
+                        wind: `${Math.round(data.current.wind_speed_10m * 3.6)} km/h`
                     };
                 });
 
@@ -332,6 +380,8 @@
                 renderTable(filteredData);
             } catch (error) {
                 console.error('Erro ao buscar dados do clima:', error);
+            } finally {
+                loadingIndicator.classList.remove('active');
             }
         }
 
@@ -349,32 +399,41 @@
                 return;
             }
             
-            weatherGrid.innerHTML = data.map(city => `
-                <div class="weather-card" data-condition="${city.condition}">
-                    <div class="card-header">
-                        <div class="city-name">${city.city}</div>
-                        <div class="weather-icon">${city.icon}</div>
-                    </div>
-                    <div class="weather-condition">
-                        ${city.condition.charAt(0).toUpperCase() + city.condition.slice(1)}
-                    </div>
-                    <div class="temperature">${city.temperature}</div>
-                    <div class="weather-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Umidade</span>
-                            <span class="detail-value">${city.humidity}</span>
+            // Adiciona uma classe temporária para animação
+            weatherGrid.style.opacity = '0';
+            
+            setTimeout(() => {
+                weatherGrid.innerHTML = data.map(city => `
+                    <div class="weather-card" data-condition="${city.condition}">
+                        <div class="card-header">
+                            <div class="city-name">${city.city}</div>
+                            <div class="weather-icon">${city.icon}</div>
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Vento</span>
-                            <span class="detail-value">${city.wind}</span>
+                        <div class="weather-condition">
+                            ${city.condition.charAt(0).toUpperCase() + city.condition.slice(1)}
+                        </div>
+                        <div class="temperature">${city.temperature}</div>
+                        <div class="weather-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Umidade</span>
+                                <span class="detail-value">${city.humidity}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Vento</span>
+                                <span class="detail-value">${city.wind}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
 
-            // Atualiza o timestamp da última atualização
-            const now = new Date();
-            lastUpdate.textContent = `Última atualização: ${now.toLocaleTimeString()}`;
+                // Restaura a opacidade com uma transição suave
+                weatherGrid.style.opacity = '1';
+                weatherGrid.style.transition = 'opacity 0.5s ease-out';
+
+                // Atualiza o timestamp da última atualização
+                const now = new Date();
+                lastUpdate.textContent = `Última atualização: ${now.toLocaleTimeString()}`;
+            }, 300);
         }
 
         // Função para filtrar dados
